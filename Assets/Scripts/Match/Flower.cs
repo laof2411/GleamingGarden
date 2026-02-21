@@ -12,6 +12,7 @@ public class Flower : MonoBehaviour, ISwitchable
     private Vector2 _currentPos;
     private Vector2 _targetPos;
     private bool _isMoving;
+    [SerializeField] private Animator _animator;
 
     #region Properties
     public int xIndex
@@ -49,6 +50,12 @@ public class Flower : MonoBehaviour, ISwitchable
         get { return _type; }
         set { _type = value; }
     }
+
+    public Animator animator
+    {
+        get { return _animator; }
+        set { _animator = value; }
+    }
     #endregion Properties
 
     public Flower(int _x, int _y)
@@ -57,9 +64,31 @@ public class Flower : MonoBehaviour, ISwitchable
         yIndex = _y;
     }
 
-    public void DestroySwitchable()
+    private void Start()
     {
-        //Debug.Log(name);
+        float random = Random.Range(0.0f, 1.0f);
+
+        StartCoroutine(IdleAnimationCoroutine(random));
+    }
+
+    private IEnumerator IdleAnimationCoroutine(float _seconds)
+    {
+        yield return new WaitForSeconds(_seconds);
+
+        int random = Random.Range(0, 1);
+        if(random == 0)
+        {
+            animator.SetBool("left",true);
+        }
+        else
+        {
+            animator.SetBool("right", true);
+        }      
+    }
+
+    public void DisableSwitchable()
+    {
+        AudioManager.instance.PlayAudio("Poof");
         this.gameObject.SetActive(false);
     }
 

@@ -45,4 +45,49 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AudioManager
   audioMixer: {fileID: 24100000, guid: 0c234345b9fdcb841b4977918b8e856d, type: 2}
-  presets: []
+  presets:
+  - audioName: Gameplay
+    clip: {fileID: 8300000, guid: 2d462a8419974954b9ef65182d14ace5, type: 3}
+    volume: 1
+    loop: 1
+    audioType: 1
+  - audioName: LevelSelection
+    clip: {fileID: 8300000, guid: f2de305463755cf4db586594ebdd016b, type: 3}
+    volume: 1
+    loop: 0
+    audioType: 1
+  - audioName: VictorySound
+    clip: {fileID: 8300000, guid: a1ecf28b05f21db41a8bbbdedf4e5305, type: 3}
+    volume: 1
+    loop: 0
+    audioType: 2
+  - audioName: DefeatSound
+    clip: {fileID: 8300000, guid: 8dac47b459cac304e88e5fa777112687, type: 3}
+    volume: 1
+    loop: 0
+    audioType: 2
+  - audioName: Poof
+    clip: {fileID: 8300000, guid: 215ebd7c0472a3b48ae808a2e0c3dc2c, type: 3}
+    volume: 1
+    loop: 0
+    audioType: 2
+  - audioName: BushRustle
+    clip: {fileID: 8300000, guid: c6eeafab3dca3cc4a8eb9fd6b91d49c0, type: 3}
+    volume: 1
+    loop: 0
+    audioType: 3
+  - audioName: ButtonBubble
+    clip: {fileID: 8300000, guid: 383d74b90d10b4047a3f263633e30a32, type: 3}
+    volume: 1
+    loop: 0
+    audioType: 3
+  - audioName: Scene Change
+    clip: {fileID: 8300000, guid: 1e54a76e071de694ca1550b10d43258a, type: 3}
+    volume: 0.816
+    loop: 0
+    audioType: 2
+  - audioName: Woosh
+    clip: {fileID: 8300000, guid: 41fce276c5729a74ea4f069935e45f1d, type: 3}
+    volume: 1
+    loop: 0
+    audioType: 2

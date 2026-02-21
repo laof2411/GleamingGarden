@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 8605761533192404111}
   - component: {fileID: 4792856310767728159}
   - component: {fileID: 6902990924177147358}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Iirs (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -101,7 +101,7 @@ GameObject:
   - component: {fileID: 4775872367570312958}
   - component: {fileID: 2880668409826824545}
   - component: {fileID: 8908476543825617811}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Iirs (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}

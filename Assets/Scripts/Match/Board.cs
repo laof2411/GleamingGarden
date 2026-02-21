@@ -1,20 +1,22 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.VFX;
 
 public class Board : MonoBehaviour
 {
     public int width = 5;
     public int height = 6;
 
-    public float spacingX;
-    public float spacingY;
-    [SerializeField] private float spacingParameter;
+    public float spacing;
 
     public GameObject[] flowerPrefabs;
+    public GameObject poofVFXPrefab;
+    public GameObject cellPrefab;
 
     private Cell[,] board;
     public GameObject boardZone;
+    public GameObject highlight;
 
     public List<ISwitchable> switchablesToDestroy = new();
     public List<ISwitchable> switchablesToRemove = new();
@@ -22,46 +24,74 @@ public class Board : MonoBehaviour
     [SerializeField] private ISwitchable selectedSwitchable;
     [SerializeField] public bool isProcessingMove;
 
-    public ArrayLayout arrayLayout;
-    public static Board instance;
+    public ArrayLayout cellLayout;
 
-    private void Awake()
+    [Header("External References")]
+    [SerializeField] private LevelManager levelManager;
+
+    public void IntroduceLevelData(LevelData _levelData)
     {
-        instance = this;
+        width = _levelData.levelWidth;
+        height = _levelData.levelHeight;
+        cellLayout = _levelData.levelCellLayout;
+
+        InitializeBoard(true);
     }
 
-    private void Start()
-    {
-        InitializeBoard();
-    }
-
-    private void InitializeBoard()
+    public void InitializeBoard(bool _firstime)
     {
         DestroySwitchables();
         board = new Cell[width, height];
-
-        spacingX = (float)(width - 1) / spacingParameter;
-        spacingY = (float)(width - 1) / spacingParameter;
-        //spacingY = (float)((height - 1) / spacingParameter) + 1;
 
         for (int y = 0; y < height; y++)
         {
             for (int x = 0; x < width; x++)
             {
-                Vector2 position = new Vector2(x - spacingX, y - spacingY);
-
-                if (arrayLayout.rows[y].row[x])
+                float yValue;
+                float xValue;
+                if (height % 2 == 0)
                 {
-                    board[x, y] = new Cell(false, null);
+                    yValue = ((y * spacing) + (spacing / 2)) - (height / 2 * spacing);
+                }
+                else
+                {
+                    yValue = (y * spacing) - (height / 2 * spacing);
+                }
+
+                if (width % 2 == 0)
+                {
+                    xValue = ((x * spacing) + (spacing / 2)) - (width / 2 * spacing);
+                }
+                else
+                {
+                    xValue = (x * spacing) - (width / 2 * spacing);
+                }
+
+                Vector3 position = new Vector3(xValue, yValue, 0);
+
+                if (cellLayout.rows[y].row[x])
+                {
+                    board[x, y] = new Cell(false, null, null, position);
                 }
                 else
                 {
                     int randomIndex = Random.Range(0, flowerPrefabs.Length);
 
+                    if (_firstime)
+                    {
+                        GameObject cell = Instantiate(cellPrefab, position + new Vector3(0, 0, 1f), Quaternion.identity);
+                        cell.transform.SetParent(boardZone.transform);
+                    }
+
+                    ParticleSystem poofEffect = Instantiate(poofVFXPrefab, position, Quaternion.identity).GetComponent<ParticleSystem>();
+                    poofEffect.transform.Rotate(new Vector3(-90, 0, 0));
                     ISwitchable flower = Instantiate(flowerPrefabs[randomIndex], position, Quaternion.identity).GetComponent<ISwitchable>();
                     flower.SetIndicacies(x, y);
+
                     flower.GetGameObject().transform.SetParent(boardZone.transform);
-                    board[x, y] = new Cell(true, flower);
+                    poofEffect.gameObject.transform.SetParent(boardZone.transform);
+
+                    board[x, y] = new Cell(true, flower, poofEffect, position);
                     switchablesToDestroy.Add(flower);
                 }
             }
@@ -69,13 +99,13 @@ public class Board : MonoBehaviour
 
         if (CheckBoard())
         {
-            InitializeBoard();
+            InitializeBoard(false);
         }
     }
 
     public bool CheckBoard()
     {
-        if (GameManager.instance.isGameEnded)
+        if (levelManager.isGameEnded)
         {
             return false;
         }
@@ -83,9 +113,9 @@ public class Board : MonoBehaviour
 
         switchablesToRemove = new();
 
-        foreach(Cell cell in board)
+        foreach (Cell cell in board)
         {
-            if(cell.switchable != null)
+            if (cell.switchable != null)
             {
                 cell.switchable.isMatched = false;
             }
@@ -95,31 +125,30 @@ public class Board : MonoBehaviour
         {
             for (int y = 0; y < height; y++)
             {
-                if (board[x, y].isUsable)
+                if (!board[x, y].isUsable)
                 {
-                    ISwitchable switchable = board[x, y].switchable;
+                    continue;
+                }
+                if (board[x,y].switchable.isMatched)
+                {
+                    continue;
+                }
 
-                    if (!switchable.isMatched)
+                MatchResult matchedSwitchables = IsConnected(board[x, y].switchable);
+
+                if (matchedSwitchables.connectedSwitchables.Count >= 3)
+                {
+                    MatchResult specialMatch = SuperMatch(matchedSwitchables);
+                    switchablesToRemove.AddRange(specialMatch.connectedSwitchables);
+
+                    foreach (ISwitchable switcha in specialMatch.connectedSwitchables)
                     {
-                        MatchResult matchedSwitchables = IsConnected(switchable);
-
-                        if (matchedSwitchables.connectedSwitchables.Count >= 3)
-                        {
-                            MatchResult specialMatch = SuperMatch(matchedSwitchables);
-                            switchablesToRemove.AddRange(specialMatch.connectedSwitchables);
-
-                            foreach (ISwitchable switcha in specialMatch.connectedSwitchables)
-                            {
-                                switcha.isMatched = true;
-                            }
-
-                            hasMatched = true;
-                        }
+                        switcha.isMatched = true;
                     }
+                    hasMatched = true;
                 }
             }
         }
-
         return hasMatched;
     }
 
@@ -130,16 +159,17 @@ public class Board : MonoBehaviour
             int xIndex = switchable.xIndex;
             int yIndex = switchable.yIndex;
 
-            switchable.DestroySwitchable();
+            switchable.DisableSwitchable();
 
-            board[xIndex, yIndex] = new Cell(true, null);
+            board[xIndex, yIndex].switchable = null;
+            board[xIndex, yIndex].dissapearEffect.Play();
         }
 
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                if (board[x, y].switchable == null)
+                if (board[x, y].switchable == null && board[x, y].isUsable)
                 {
                     RefillSwitchable(x, y);
                 }
@@ -160,15 +190,14 @@ public class Board : MonoBehaviour
         {
             ISwitchable switchAbove = board[x, y + yOffset].switchable;
 
-            Vector3 targetPos = new Vector3(x - spacingX, y - spacingY, switchAbove.GetGameObject().transform.position.z);
+            Vector3 targetPos = board[x, y].switchablePosition;
             switchAbove.MoveToTarget(targetPos);
             switchAbove.SetIndicacies(x, y);
-            board[x, y] = board[x, y + yOffset];
 
-            board[x, y + yOffset] = new Cell(true, null);
+            board[x, y].switchable = switchAbove;
+            board[x, y + yOffset].switchable = null;
         }
-
-        if (y + yOffset == height)
+        else if (y + yOffset == height)
         {
             SpawnAtTop(x);
         }
@@ -177,27 +206,25 @@ public class Board : MonoBehaviour
     private void SpawnAtTop(int x)
     {
         int index = FindIndexOfLowestNull(x);
-        int locationToMove = height - index;
 
         int randomIndex = Random.Range(0, flowerPrefabs.Length);
-        ISwitchable newFlower = Instantiate(flowerPrefabs[randomIndex], new Vector2(x - spacingX, height - spacingY), Quaternion.identity).GetComponent<ISwitchable>();
+        ISwitchable newFlower = Instantiate(flowerPrefabs[randomIndex], board[x, index].switchablePosition + new Vector3(0, height + (index * spacing), 0), Quaternion.identity).GetComponent<ISwitchable>();
         newFlower.GetGameObject().transform.SetParent(boardZone.transform);
 
         newFlower.SetIndicacies(x, index);
-        board[x, index] = new Cell(true, newFlower);
+        board[x, index].switchable = newFlower;
 
-        Vector3 targetPosition = new Vector3(newFlower.GetGameObject().transform.position.x, newFlower.GetGameObject().transform.position.y - locationToMove, newFlower.GetGameObject().transform.position.z);
-        newFlower.MoveToTarget(targetPosition);
+        newFlower.MoveToTarget(board[x, index].switchablePosition);
     }
 
     private int FindIndexOfLowestNull(int x)
     {
         int lowestNull = 100;
 
-        for(int y = height - 1; y >= 0; y--)
+        for (int y = height - 1; y >= 0; y--)
         {
             //Debug.Log(x + "," + y);
-            if (board[x,y].switchable == null)
+            if (board[x, y].switchable == null && board[x, y].isUsable)
             {
                 lowestNull = y;
             }
@@ -401,7 +428,7 @@ public class Board : MonoBehaviour
         {
             foreach (ISwitchable switchable in switchablesToDestroy)
             {
-                switchable.DestroySwitchable();
+                switchable.DisableSwitchable();
             }
             switchablesToDestroy.Clear();
         }
@@ -413,15 +440,19 @@ public class Board : MonoBehaviour
         if (selectedSwitchable == null)
         {
             selectedSwitchable = switchable;
+            highlight.transform.position = new Vector3(switchable.GetGameObject().transform.position.x, switchable.GetGameObject().transform.position.y, 0.5f);
+            highlight.GetComponent<ParticleSystem>().Play();
         }
         else if (selectedSwitchable == switchable)
         {
             selectedSwitchable = null;
+            highlight.GetComponent<ParticleSystem>().Stop();
         }
         else if (selectedSwitchable != switchable)
         {
             SwapSwitchable(selectedSwitchable, switchable);
             selectedSwitchable = null;
+            highlight.GetComponent<ParticleSystem>().Stop();
         }
     }
 
@@ -436,6 +467,10 @@ public class Board : MonoBehaviour
         isProcessingMove = true;
 
         StartCoroutine(ProcessMatches(currentSwitchable, targetSwitchable));
+    }
+    private bool IsAdjacent(ISwitchable currentSwitchable, ISwitchable targetSwitchable)
+    {
+        return Mathf.Abs(currentSwitchable.xIndex - targetSwitchable.xIndex) + Mathf.Abs(currentSwitchable.yIndex - targetSwitchable.yIndex) == 1;
     }
 
     private void DoSwap(ISwitchable currentSwitchable, ISwitchable targetSwitchable)
@@ -453,6 +488,8 @@ public class Board : MonoBehaviour
 
         currentSwitchable.MoveToTarget(targetSwitchable.GetGameObject().transform.position);
         targetSwitchable.MoveToTarget(currentSwitchable.GetGameObject().transform.position);
+        
+        AudioManager.instance.PlayAudio("Woosh");
     }
 
     private IEnumerator ProcessMatches(ISwitchable currentSwitchable, ISwitchable targetSwitchable)
@@ -471,6 +508,7 @@ public class Board : MonoBehaviour
         isProcessingMove = false;
     }
 
+
     private IEnumerator ProcessTurnOnMatch(bool subtractMoves)
     {
         foreach (ISwitchable switchableToRemove in switchablesToRemove)
@@ -478,7 +516,16 @@ public class Board : MonoBehaviour
             switchableToRemove.isMatched = false;
         }
         RemoveAndRefill(switchablesToRemove);
-        GameManager.instance.ProcessTurn(switchablesToRemove.Count, subtractMoves);
+
+        if(GameManager.instance.currentLevelData.levelMoves > 0)
+        {
+            levelManager.ProcessTurn(switchablesToRemove.Count, subtractMoves);
+        }
+        else
+        {
+            levelManager.ProcessTurn(switchablesToRemove.Count, false);
+        }
+        
 
         yield return new WaitForSeconds(0.4f);
 
@@ -488,15 +535,17 @@ public class Board : MonoBehaviour
         }
     }
 
-    private bool IsAdjacent(ISwitchable currentSwitchable, ISwitchable targetSwitchable)
+    private IEnumerator TurnOffEffects(List<VisualEffect> _visualEffects)
     {
-        return Mathf.Abs(currentSwitchable.xIndex - targetSwitchable.xIndex) + Mathf.Abs(currentSwitchable.yIndex - targetSwitchable.yIndex) == 1;
+        yield return new WaitForSeconds(0.3f);
+
+        foreach (VisualEffect effect in _visualEffects)
+        {
+            effect.enabled = false;
+        }
     }
+
     #endregion Swapping Potions
-
-    #region Cascading Potions
-
-    #endregion Cascading Potions
 }
 
 public class MatchResult

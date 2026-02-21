@@ -44,7 +44,7 @@ GameObject:
   - component: {fileID: 3944968978598474726}
   - component: {fileID: 2365624913418714470}
   - component: {fileID: 8111773241168298047}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Jacinto (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -134,7 +134,7 @@ GameObject:
   - component: {fileID: 2627361430979929348}
   - component: {fileID: 5662854126443893213}
   - component: {fileID: 4283296024541706149}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Jacinto (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}

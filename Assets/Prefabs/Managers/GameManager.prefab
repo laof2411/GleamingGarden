@@ -44,14 +44,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bbeea1d65c474f84db9fdfbd6fbaf5b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
-  backgroundPanel: {fileID: 0}
-  victoryPanel: {fileID: 0}
-  losePanel: {fileID: 0}
-  goal: 0
-  moves: 0
-  points: 0
-  time: 0
-  isGameEnded: 0
-  pointsText: {fileID: 0}
-  goalText: {fileID: 0}
-  movesText: {fileID: 0}
+  currentLevelData: {fileID: 0}
+  levelsCompleted: 0000000000

@@ -14,6 +14,8 @@ public interface ISwitchable
 
     public SwitchableType type { get; set; }
 
+    public Animator animator { get; set; }
+
     public void SetIndicacies(int _x, int _y)
     {
         xIndex = _x;
@@ -22,7 +24,7 @@ public interface ISwitchable
 
     public void MoveToTarget(Vector2 targetPosition);
     public IEnumerator MoveCoroutine(Vector2 targetPos);
-    public void DestroySwitchable();
+    public void DisableSwitchable();
     public GameObject GetGameObject();
 }
 

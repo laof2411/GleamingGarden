@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 8166827405647728309}
   - component: {fileID: 2300075873327804621}
   - component: {fileID: 5188282724866781045}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Canasta
   m_TagString: Untagged
   m_Icon: {fileID: 0}

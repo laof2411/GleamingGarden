@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 2619954502121564195}
   - component: {fileID: 8259734844762249352}
   - component: {fileID: 3156326457125062234}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Maceta
   m_TagString: Untagged
   m_Icon: {fileID: 0}

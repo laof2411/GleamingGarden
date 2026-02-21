@@ -1,3 +1,4 @@
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -5,72 +6,47 @@ using UnityEngine.SceneManagement;
 public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
+    public LevelData currentLevelData;
 
-    public GameObject backgroundPanel;
-    public GameObject victoryPanel;
-    public GameObject defeatPanel;
-
-    public int goal;
-    public int moves;
-    public int points;
-    public int time;
-
-    public bool isGameEnded;
-
-    public TextMeshProUGUI pointsText;
-    public TextMeshProUGUI goalText;
-    public TextMeshProUGUI movesText;
+    public bool[] levelsCompleted;
 
     private void Awake()
     {
-        instance = this;
-    }
-
-    private void Update()
-    {
-        pointsText.text = "Points: " + points.ToString();
-        movesText.text = "Moves: " + moves.ToString();
-
-        goalText.text = "Goal: " + goal.ToString();
-    }
-
-    public void Initialize(int _moves, int _goal)
-    {
-        moves = _moves;
-        goal = _goal;
-    }
-
-    public void ProcessTurn(int _pointsToGain, bool _substractMoves)
-    {
-        points += _pointsToGain;
-        if (_substractMoves)
+        if (instance == null)
         {
-            moves--;
+            instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            this.gameObject.SetActive(false);
         }
 
-        if(points >= goal)
-        {
-            isGameEnded = true;
-            backgroundPanel.SetActive(true);
-            victoryPanel.SetActive(true);
-            return;
-        }
-        else if(moves == 0)
-        {
-            isGameEnded = true;
-            backgroundPanel.SetActive(true);
-            defeatPanel.SetActive(true);
-            return;
-        }
+        FindAnyObjectByType<BlackCanvas>().MakeMaskSmall();
     }
 
-    public void WinGame()
+    public void PlayLevel()
     {
-        SceneManager.LoadScene(0);
+        AudioManager.instance.PlayAudio("Scene Change");
+        
+        FindAnyObjectByType<BlackCanvas>().MakeMaskBig();
+        StartCoroutine(SceneChange(1));
     }
 
-    public void LoseGame()
+    public void BackToLevelSelection()
     {
-        SceneManager.LoadScene(0);
+        AudioManager.instance.PlayAudio("Scene Change");
+
+        FindAnyObjectByType<BlackCanvas>().MakeMaskBig();
+        StartCoroutine(SceneChange(0));
+    }
+
+    private IEnumerator SceneChange(int _sceneNumber)
+    {
+        yield return new WaitForSeconds(1f);
+
+        AudioManager.instance.StopAudio("LevelSelection");
+        AudioManager.instance.StopAudio("Gameplay");
+        SceneManager.LoadScene(_sceneNumber);
     }
 }

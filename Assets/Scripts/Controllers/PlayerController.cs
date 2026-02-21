@@ -3,9 +3,12 @@ using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
-    [SerializeField] private ActionInput actionInput;
-    private InputAction mouseAction;
+    [SerializeField] private Board boardReference;
+    [SerializeField] private LevelManager levelManagerReference;
 
+    private InputAction mouseAction;
+    private ActionInput actionInput;
+    
     private void Awake()
     {
         actionInput = new ActionInput();       
@@ -25,18 +28,21 @@ public class PlayerController : MonoBehaviour
 
     private void Click(InputAction.CallbackContext context)
     {
+        if (levelManagerReference.isGameEnded)
+        {
+            return;
+        }
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction,Mathf.Infinity, LayerMask.GetMask("Switchable"));
         
         if (hit.collider != null)
         {
-            if (Board.instance.isProcessingMove)
+            if (boardReference.isProcessingMove)
             {
                 return;
             }
             ISwitchable switchable = hit.collider.gameObject.GetComponent<ISwitchable>();
-            Board.instance.SelectSwitchable(switchable);
+            boardReference.SelectSwitchable(switchable);
         }
-        Debug.DrawRay(ray.origin, ray.direction, Color.red);
     }
 }
